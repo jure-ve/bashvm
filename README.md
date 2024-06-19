@@ -5,7 +5,7 @@ bashvm is a console based virtual machine manager
 ## How to use
 
 ### One-liner Command
-`wget -qO- https://bashvm.com/bashvm.tar.gz | tar xz && cd bashvm && bash bashvm-installer.sh && bash bashvm.sh`
+`wget -qO- https://github.com/babywhale321/bashvm/releases/download/06-17-2024/bashvm.tar.gz | tar xz && cd bashvm && bash bashvm-installer.sh && bash bashvm.sh`
 
 ### Getting Started
 
@@ -20,7 +20,9 @@ bashvm is a console based virtual machine manager
 `bash bashvm.sh`
 
 ### Recommended OS for bashvm
-Debian 12, Ubuntu 22.04
+- Debian 12
+- Ubuntu 22.04
+- Ubuntu 24.04
 
 ### Screenshots
 https://bashvm.com/screenshots.html

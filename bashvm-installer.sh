@@ -48,8 +48,14 @@ check_status $? "net-tools"
 apt install ufw -y
 check_status $? "ufw"
 
-apt install htop -y
-check_status $? "htop"
+apt install btop -y
+check_status $? "btop"
+
+apt install bc -y
+check_status $? "bc"
+
+apt install ifstat -y
+check_status $? "ifstat"
 
 apt install ndppd -y
 check_status $? "ndppd"
