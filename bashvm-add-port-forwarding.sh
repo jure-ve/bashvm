@@ -69,6 +69,15 @@ initialize_db() {
 # Initialize database
 initialize_db
 
+# Check if the vm name exists in the database
+vm_exists=$(sqlite3 "$db_file" "SELECT EXISTS(SELECT 1 FROM "$net_table" WHERE vm_name='$vm_name');")
+
+# Verify the result
+if [[ "$vm_exists" -eq 1 ]]; then
+    echo "The vm name '$vm_name' already exists in the database."
+    exit 1
+fi
+
 # Check if ipv4 exists in the database
 exists=$(sqlite3 "$db_file" "SELECT EXISTS(SELECT 1 FROM "$net_table" WHERE ipv4='$ipv4');")
 
@@ -99,10 +108,11 @@ INSERT INTO $net_table (vm_name, ipv4, ssh_port, start_port, end_port)
 VALUES ("$vm_name", "$ipv4", "$ssh_port", "$start_port", "$end_port");
 EOF
 
-shebang=$(cat /etc/libvirt/hooks/qemu | grep '#!/bin/bash')
+shebang=$(cat /etc/libvirt/hooks/qemu 2>/dev/null | grep '#!/bin/bash')
 
 if [ -z "$shebang" ]; then
     echo "#!/bin/bash" >> /etc/libvirt/hooks/qemu
+    chmod +x /etc/libvirt/hooks/qemu
 fi
 
 # Identifier for deleting if needed
