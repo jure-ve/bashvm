@@ -10,7 +10,7 @@ while true; do
     echo " 1. Virtual Machines  2. Storage Pools         3. Networks"
     echo " 4. Snapshots         5. Edit Properties       6. Firewall Settings"
     echo " 7. Port Forwarding   8. VNC / Console Access  9. System Monitor"   
-    echo "10. VM Monitor        q. Exit"
+    echo "10. VM Monitor       11. SQLite Editor         q. Exit"
     echo ""
     # Prompt user for input
     read -ep "Enter your choice: " main_choice
@@ -720,16 +720,30 @@ while true; do
             # VNC / Console Access
                         while true; do
                 echo -e "\n======================== VNC / Console Access ========================"
-                echo "s. Show listening ports  1. Add VNC port with password  2. Remove VNC port"        
-                echo "3. Console into a vm     q. Back to main menu"
+                echo "s. Show assigned VNC ports  1. Add VNC port with password  2. Remove VNC port"        
+                echo "3. Console into a vm        q. Back to main menu"
                 echo ""
                 read -ep "Enter your choice: " vnc_manage_choice
 
                 case $vnc_manage_choice in
 
                     s)
-                        # Show listening ports
-                        netstat -l | grep "tcp\|udp"
+                        # Show assigned VNC ports
+                        echo ""
+                        for vm in $(virsh list --all --name); do
+                            vm_run=$(virsh domstate "$vm")
+                            if [ "$vm_run" != "running" ]; then
+                                echo "$vm is not running (state: $vm_run)"
+                            else
+                                port=$(virsh vncdisplay "$vm" 2>/dev/null | sed 's/^://')
+                                if [ -z "$port" ]; then
+                                    echo "VM: $vm, VNC Port: none"
+                                else
+                                    echo "VM: $vm, VNC Port: $((5900 + port))"
+                                fi
+                            fi
+                            echo ""
+                        done
                         ;;
 
                     1)
@@ -949,7 +963,10 @@ while true; do
             done
         ;;
 
-            
+        11)
+            # sqlite editor
+            bash bashvm-sqlite-editor.sh
+            ;;
         q)
             # Exit the script
             echo "Exiting."
