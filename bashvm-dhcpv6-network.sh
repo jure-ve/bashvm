@@ -4,26 +4,31 @@
 #
 #Author: Kyle Schroeder "BabyWhale"
 
-read -ep "Enter the main interface name that already has a IPv6 address (e.g., eth0): " int_name
-read -ep "Enter a IPv6 prefix that is a higher number then your main interface ( e.g., if 64 then 80 ): " ip_prefix 
-read -ep "Enter the network name [default]: " net_name
+read -ep "Enter the network name to add DHCPv6 [default]: " net_name
 
 if [ -z "$net_name" ]; then
     net_name="default"
 fi
+
+is_nat_check=$(virsh net-dumpxml "$net_name" | grep "<forward mode='nat'>")
+
+if [ -z "$is_nat_check" ]; then
+    echo "This function only works on NAT networks currently"
+    exit
+fi
+
+read -ep "Enter the main interface name (e.g., eth0): " int_name
+read -ep "Enter the ipv6 address that will be served as the gateway ( e.g., xxxx::1 ): " ip_gateway
+read -ep "Enter the prefix of the gateway (e.g., 64): " ip_prefix
+read -ep "Enter the starting range ( e.g., xxxx::2 ): " ip_start
+read -ep "Enter the ending range ( e.g., xxxx::300 ): " ip_end
+
 
 cat /etc/libvirt/qemu/networks/"$net_name".xml | grep "ipv6" >> /dev/null
 
 if [ $? == 0 ];then
     echo "There is already a dhcpv6 configuration in ""$net_name"""
     echo "Please remove the dhcpv6 information from ""$net_name"" before running this again."
-    exit
-fi
-
-ip address show dev "$int_name" | grep inet6 | grep global >> /dev/null
-
-if [ ! $? == 0 ];then
-    echo "There is no IPv6 address detected on the main interface"
     exit
 fi
 
@@ -50,42 +55,6 @@ WantedBy=multi-user.target" > /etc/systemd/system/bashvm-ipv6-accept-ra.service
 # Enable service
 systemctl enable bashvm-ipv6-accept-ra.service
 fi
-
-# Detect the ipv6 address
-ipv6_address=$(ifconfig | grep inet6 | grep global | awk '{print $2}')
-
-# Function to increment a hexadecimal digit
-increment_hex() {
-    local hex=$1
-    printf '%x' $(( 0x$hex + 1 ))
-}
-
-# Function to calculate the next IPv6 address
-next_ipv6_address() {
-    local ipv6_address=$1
-
-    # Split the IPv6 address into parts
-    IFS=':' read -ra address_parts <<< "$ipv6_address"
-
-    # Increment the last digit
-    last_index=$((${#address_parts[@]} - 1))
-    new_last_digit=$(increment_hex "${address_parts[last_index]}")
-    address_parts[last_index]=$new_last_digit
-
-    # Reconstruct the next IPv6 address
-    next_ipv6_address=$(IFS=':'; echo "${address_parts[*]}")
-    echo "$next_ipv6_address"
-}
-
-# Find the next 2 IPv6 addresses
-ip_gateway=$(next_ipv6_address "$ipv6_address")
-ip_start=$(next_ipv6_address "$ip_gateway")
-
-# Loop to find the next 300 IPv6 addresses
-ip_end="$ip_start"
-for ((i = 1; i <= 300; i++)); do
-    ip_end=$(next_ipv6_address "$ip_end")
-done
 
 # dhcpv6 info
 vm_info="  </ip>
